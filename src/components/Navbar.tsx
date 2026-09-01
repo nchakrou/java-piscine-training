@@ -1,0 +1,143 @@
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Code2, Trophy, BarChart3, Search, Terminal, Sparkles, CheckCircle2 } from 'lucide-react';
+import { QuickSearchModal } from './QuickSearchModal';
+import { ChallengeSummary, PlatformStats } from '../types';
+import { api } from '../api';
+
+interface Props {
+  challenges?: ChallengeSummary[];
+}
+
+export const Navbar: React.FC<Props> = ({ challenges = [] }) => {
+  const location = useLocation();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [stats, setStats] = useState<PlatformStats | null>(null);
+
+  useEffect(() => {
+    api.getStats().then(setStats).catch(() => {});
+  }, [location.pathname]);
+
+  // Global keyboard shortcut Ctrl+K / Cmd+K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsSearchOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const isActive = (path: string) => {
+    if (path === '/' || path === '/challenges') {
+      return location.pathname === '/' || location.pathname === '/challenges';
+    }
+    return location.pathname.startsWith(path);
+  };
+
+  const solvedCount = stats ? stats.valid : 0;
+  const totalCount = stats ? stats.total : (challenges.length || 109);
+  const solvedPercent = totalCount > 0 ? Math.round((solvedCount / totalCount) * 100) : 0;
+
+  return (
+    <>
+      <header className="sticky top-0 z-40 w-full bg-dark-950/90 backdrop-blur-md border-b border-slate-800/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+          
+          {/* Logo & Brand */}
+          <div className="flex items-center gap-6">
+            <Link to="/" className="flex items-center gap-2.5 group">
+              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-brand-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-brand-500/20 group-hover:scale-105 transition-transform">
+                <Terminal className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <span className="text-lg font-bold tracking-tight text-white flex items-center gap-1">
+                  Java<span className="text-brand-400">Forge</span>
+                </span>
+                <span className="hidden sm:block text-[10px] uppercase font-mono tracking-widest text-slate-500 -mt-1">
+                  Piscine Runner
+                </span>
+              </div>
+            </Link>
+
+            {/* Navigation links */}
+            <nav className="hidden md:flex items-center gap-1">
+              <Link
+                to="/challenges"
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                  isActive('/challenges')
+                    ? 'bg-slate-800 text-brand-400'
+                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                }`}
+              >
+                <Code2 className="w-4 h-4" />
+                Challenges
+              </Link>
+              <Link
+                to="/submissions"
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                  isActive('/submissions')
+                    ? 'bg-slate-800 text-brand-400'
+                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                }`}
+              >
+                <Trophy className="w-4 h-4" />
+                Submissions
+              </Link>
+              <Link
+                to="/stats"
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                  isActive('/stats')
+                    ? 'bg-slate-800 text-brand-400'
+                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                }`}
+              >
+                <BarChart3 className="w-4 h-4" />
+                Analytics
+              </Link>
+            </nav>
+          </div>
+
+          {/* Right Actions */}
+          <div className="flex items-center gap-3">
+            
+            {/* Quick Search Button */}
+            <button
+              onClick={() => setIsSearchOpen(true)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-dark-900 hover:bg-slate-800 border border-slate-700/60 text-slate-400 hover:text-slate-200 text-sm transition-colors shadow-inner"
+              title="Quick Search (Ctrl+K)"
+            >
+              <Search className="w-4 h-4 text-slate-400" />
+              <span className="hidden sm:inline text-xs">Search challenges...</span>
+              <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono text-slate-400 bg-slate-800 border border-slate-700 rounded">
+                ⌘K
+              </kbd>
+            </button>
+
+            {/* Solved Progress Pill */}
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-dark-900 border border-slate-700/60 rounded-lg">
+              <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+              </div>
+              <div className="text-xs">
+                <span className="font-semibold text-emerald-400">{solvedCount}</span>
+                <span className="text-slate-500">/{totalCount}</span>
+                <span className="hidden lg:inline text-slate-400 ml-1 font-mono">({solvedPercent}%)</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </header>
+
+      {/* Global Quick Search Spotlight */}
+      <QuickSearchModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        challenges={challenges}
+      />
+    </>
+  );
+};
