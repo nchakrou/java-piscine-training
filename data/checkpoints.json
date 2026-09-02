@@ -1,0 +1,127 @@
+[
+  {
+    "id": "checkpoint-02-java",
+    "title": "Checkpoint 02 - Java Exam",
+    "examId": "java#102575",
+    "week": 2,
+    "startDay": 12,
+    "durationDays": 1,
+    "expectedXP": 37000,
+    "xpIndex": 26,
+    "level": 10,
+    "difficulty": 20,
+    "branch": 2,
+    "parent": "piscine",
+    "language": "java",
+    "description": "Second checkpoint exam covering Java fundamentals, data structures, and algorithms. Tests your mastery of core concepts from the first two weeks.",
+    "levels": [
+      {
+        "level": 1,
+        "difficulty": 2,
+        "exercises": [
+          { "id": "timetracker", "title": "TimeTracker", "xp": 3700 },
+          { "id": "todolist", "title": "TodoList", "xp": 3700 }
+        ]
+      },
+      {
+        "level": 2,
+        "difficulty": 4,
+        "exercises": [
+          { "id": "areacalculator", "title": "AreaCalculator", "xp": 7400 },
+          { "id": "factorialmaster", "title": "FactorialMaster", "xp": 7400 }
+        ]
+      },
+      {
+        "level": 3,
+        "difficulty": 6,
+        "exercises": [
+          { "id": "doublelinkedlist", "title": "DoubleLinkedList", "xp": 11100 },
+          { "id": "circularlinkedlist", "title": "CircularLinkedList", "xp": 11100 },
+          { "id": "singlelinkedlist", "title": "SingleLinkedList", "xp": 11100 }
+        ]
+      },
+      {
+        "level": 4,
+        "difficulty": 8,
+        "exercises": [
+          { "id": "harmoniousfusion", "title": "HarmoniousFusion", "xp": 14800 },
+          { "id": "distinctsubstringlength", "title": "DistinctSubstringLength", "xp": 14800 },
+          { "id": "isanagram", "title": "IsAnagram", "xp": 14800 }
+        ]
+      },
+      {
+        "level": 5,
+        "difficulty": 10,
+        "exercises": [
+          { "id": "spiralmatrix", "title": "SpiralMatrix", "xp": 18500 },
+          { "id": "maximalsquare", "title": "MaximalSquare", "xp": 18500 },
+          { "id": "steadysequence", "title": "SteadySequence", "xp": 18500 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "checkpoint-03-java",
+    "title": "Checkpoint 03 - Java Exam",
+    "examId": "java#102558",
+    "week": 3,
+    "startDay": 19,
+    "durationDays": 1,
+    "expectedXP": 46000,
+    "xpIndex": 49,
+    "level": 13,
+    "difficulty": 20,
+    "branch": 3,
+    "parent": "piscine",
+    "language": "java",
+    "description": "Third checkpoint exam advancing into design patterns, advanced algorithms, and complex problem solving. Validates your progress through week 3 concepts.",
+    "levels": [
+      {
+        "level": 1,
+        "difficulty": 2,
+        "exercises": [
+          { "id": "dateformatter", "title": "DateFormatter", "xp": 4600 },
+          { "id": "dayofweek", "title": "DayOfWeek", "xp": 4600 },
+          { "id": "monthlyperiod", "title": "MonthlyPeriod", "xp": 4600 },
+          { "id": "agefinder", "title": "AgeFinder", "xp": 4600 }
+        ]
+      },
+      {
+        "level": 2,
+        "difficulty": 4,
+        "exercises": [
+          { "id": "htmlvalidator", "title": "HTMLValidator", "xp": 9200 },
+          { "id": "breakdownurl", "title": "BreakdownURL", "xp": 9200 },
+          { "id": "configprotector", "title": "ConfigProtector", "xp": 9200 }
+        ]
+      },
+      {
+        "level": 3,
+        "difficulty": 6,
+        "exercises": [
+          { "id": "singletonblueprint", "title": "SingletonBlueprint", "xp": 13800 },
+          { "id": "builderblueprint", "title": "BuilderBlueprint", "xp": 13800 },
+          { "id": "factoryblueprint", "title": "FactoryBlueprint", "xp": 13800 }
+        ]
+      },
+      {
+        "level": 4,
+        "difficulty": 8,
+        "exercises": [
+          { "id": "topfrequents", "title": "TopFrequents", "xp": 18400 },
+          { "id": "longestcommonprefix", "title": "LongestCommonPrefix", "xp": 18400 },
+          { "id": "firstunique", "title": "FirstUnique", "xp": 18400 }
+        ]
+      },
+      {
+        "level": 5,
+        "difficulty": 10,
+        "exercises": [
+          { "id": "validsudoku", "title": "ValidSudoku", "xp": 23000 },
+          { "id": "armstrongnumber", "title": "ArmstrongNumber", "xp": 23000 },
+          { "id": "perfectnumber", "title": "PerfectNumber", "xp": 23000 }
+        ]
+      }
+    ]
+  }
+]

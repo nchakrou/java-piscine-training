@@ -11,6 +11,36 @@ export interface ChallengeSummary {
   status: ChallengeStatus;
 }
 
+export interface CheckpointExercise {
+  id: string;
+  title: string;
+  xp: number;
+}
+
+export interface CheckpointLevel {
+  level: number;
+  difficulty: number;
+  exercises: CheckpointExercise[];
+}
+
+export interface Checkpoint {
+  id: string;
+  title: string;
+  examId: string;
+  week: number;
+  startDay: number;
+  durationDays: number;
+  expectedXP: number;
+  xpIndex: number;
+  level: number;
+  difficulty: number;
+  branch: number;
+  parent: string;
+  language: string;
+  description: string;
+  levels: CheckpointLevel[];
+}
+
 export interface ChallengeDetail extends ChallengeSummary {
   className: string;
   testClass: string;

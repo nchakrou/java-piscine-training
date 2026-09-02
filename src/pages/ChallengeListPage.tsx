@@ -13,30 +13,56 @@ import {
   Layers,
   ArrowRight,
   Code2,
-  CheckCheck
+  CheckCheck,
+  Flag,
+  Target,
+  Award,
+  Zap,
+  Layers as LayersIcon,
+  BookOpen,
+  Clock,
+  TrendingUp,
+  Shield,
+  Star,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  Copy,
+  AlertTriangle
 } from 'lucide-react';
-import { ChallengeSummary, Difficulty, ChallengeStatus, PlatformStats } from '../types';
+import { ChallengeSummary, Difficulty, ChallengeStatus, PlatformStats, Checkpoint, CheckpointLevel, CheckpointExercise } from '../types';
 import { api } from '../api';
 import { StatusBadge } from '../components/StatusBadge';
 import { DifficultyBadge } from '../components/DifficultyBadge';
 
+const DIFFICULTY_COLORS = {
+  Easy: { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', glow: 'shadow-emerald-500/10' },
+  Medium: { text: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', glow: 'shadow-amber-500/10' },
+  Hard: { text: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20', glow: 'shadow-rose-500/10' },
+} as const;
+
+const DIFFICULTY_RANK = { Easy: 1, Medium: 2, Hard: 3 };
+
 export const ChallengeListPage: React.FC = () => {
   const [challenges, setChallenges] = useState<ChallengeSummary[]>([]);
   const [stats, setStats] = useState<PlatformStats | null>(null);
+  const [checkpoints, setCheckpoints] = useState<Checkpoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState<Difficulty | 'ALL'>('ALL');
   const [statusFilter, setStatusFilter] = useState<ChallengeStatus | 'ALL' | 'UNATTEMPTED'>('ALL');
   const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
   const [sortBy, setSortBy] = useState<'default' | 'title' | 'difficulty' | 'status'>('default');
+  const [expandedCheckpoint, setExpandedCheckpoint] = useState<string | null>(null);
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    Promise.all([api.getChallenges(), api.getStats()])
-      .then(([challengesRes, statsRes]) => {
+    Promise.all([api.getChallenges(), api.getStats(), api.getCheckpoints()])
+      .then(([challengesRes, statsRes, checkpointsRes]) => {
         setChallenges(challengesRes.challenges);
         setStats(statsRes);
+        setCheckpoints(checkpointsRes.checkpoints);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -74,8 +100,7 @@ export const ChallengeListPage: React.FC = () => {
       .sort((a, b) => {
         if (sortBy === 'title') return a.title.localeCompare(b.title);
         if (sortBy === 'difficulty') {
-          const rank = { Easy: 1, Medium: 2, Hard: 3 };
-          return rank[a.difficulty] - rank[b.difficulty];
+          return DIFFICULTY_RANK[a.difficulty] - DIFFICULTY_RANK[b.difficulty];
         }
         if (sortBy === 'status') {
           const rank = { VALID: 1, FAILED: 2, [null as any]: 3 };
@@ -90,6 +115,44 @@ export const ChallengeListPage: React.FC = () => {
   const totalCount = challenges.length || 109;
   const progressPercent = totalCount > 0 ? Math.round((solvedCount / totalCount) * 100) : 0;
 
+  // Calculate checkpoint progress
+  const getCheckpointProgress = (checkpoint: Checkpoint) => {
+    let totalExercises = 0;
+    let completedExercises = 0;
+    checkpoint.levels.forEach(level => {
+      level.exercises.forEach(ex => {
+        totalExercises++;
+        const challenge = challenges.find(c => c.id === ex.id);
+        if (challenge?.status === 'VALID') completedExercises++;
+      });
+    });
+    return { total: totalExercises, completed: completedExercises, percent: totalExercises > 0 ? Math.round((completedExercises / totalExercises) * 100) : 0 };
+  };
+
+  const getTotalXP = (checkpoint: Checkpoint) => {
+    let total = 0;
+    checkpoint.levels.forEach(level => {
+      level.exercises.forEach(ex => total += ex.xp);
+    });
+    return total;
+  };
+
+  const getCompletedXP = (checkpoint: Checkpoint) => {
+    let total = 0;
+    checkpoint.levels.forEach(level => {
+      level.exercises.forEach(ex => {
+        const challenge = challenges.find(c => c.id === ex.id);
+        if (challenge?.status === 'VALID') total += ex.xp;
+      });
+    });
+    return total;
+  };
+
+  const formatXP = (xp: number) => {
+    if (xp >= 1000) return `${(xp / 1000).toFixed(1)}k XP`;
+    return `${xp} XP`;
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
@@ -99,6 +162,7 @@ export const ChallengeListPage: React.FC = () => {
         {/* Main Progress Card */}
         <div className="md:col-span-2 p-6 rounded-2xl bg-gradient-to-br from-dark-900 via-dark-850 to-dark-900 border border-slate-800 shadow-xl relative overflow-hidden flex flex-col justify-between">
           <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
           
           <div>
             <div className="flex items-center gap-2 text-brand-400 font-semibold text-xs uppercase tracking-wider mb-1">
@@ -235,6 +299,179 @@ export const ChallengeListPage: React.FC = () => {
 
       </div>
 
+      {/* Checkpoints Section */}
+      <section className="space-y-6" id="checkpoints">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-extrabold text-white flex items-center gap-2">
+              <Flag className="w-5 h-5 text-amber-400" />
+              Checkpoints & Exam Milestones
+            </h2>
+            <p className="text-xs text-slate-400 mt-1">
+              Timed exams that validate your mastery. Each checkpoint unlocks after completing the corresponding week's challenges.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <span className="font-mono text-brand-400">{checkpoints.length}</span>
+            <span>Checkpoints</span>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="py-12 text-center text-slate-500">
+            <BookOpen className="w-10 h-10 mx-auto mb-2 animate-pulse text-amber-400" />
+            <p>Loading checkpoints...</p>
+          </div>
+        ) : checkpoints.length === 0 ? (
+          <div className="py-12 text-center text-slate-500">
+            <Award className="w-10 h-10 mx-auto mb-2 opacity-40" />
+            <p className="text-base text-slate-300 font-medium">No checkpoints available</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {checkpoints.map((checkpoint, cpIndex) => {
+              const progress = getCheckpointProgress(checkpoint);
+              const totalXP = getTotalXP(checkpoint);
+              const completedXP = getCompletedXP(checkpoint);
+              const isExpanded = expandedCheckpoint === checkpoint.id;
+              const weekLabel = `Week ${checkpoint.week}`;
+              
+              return (
+                <div
+                  key={checkpoint.id}
+                  className="group relative bg-dark-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl transition-all duration-300 hover:border-slate-700"
+                >
+                  {/* Checkpoint Header */}
+                  <button
+                    onClick={() => setExpandedCheckpoint(isExpanded ? null : checkpoint.id)}
+                    className="w-full p-5 flex items-center gap-4 cursor-pointer hover:bg-slate-800/50 transition-colors"
+                  >
+                    {/* Checkpoint Icon & Number */}
+                    <div className="relative flex-shrink-0">
+                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                        <Flag className="w-7 h-7 text-white" />
+                      </div>
+                      <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-dark-950 border border-slate-700 flex items-center justify-center text-xs font-bold text-amber-400">
+                        {cpIndex + 1}
+                      </span>
+                    </div>
+
+                    {/* Checkpoint Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <h3 className="font-bold text-lg text-white truncate">{checkpoint.title}</h3>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase tracking-wider">
+                          {weekLabel}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-brand-500/20 text-brand-400 border border-brand-500/30">
+                          {checkpoint.examId}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-800 text-slate-400 border border-slate-700">
+                          Difficulty {checkpoint.difficulty}
+                        </span>
+                      </div>
+                      
+                      <p className="text-xs text-slate-400 mt-1 line-clamp-2">{checkpoint.description}</p>
+                      
+                      <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-slate-500">
+                        <span className="flex items-center gap-1">
+                          <Target className="w-3 h-3" />
+                          Expected: <span className="font-mono text-amber-400">{formatXP(checkpoint.expectedXP)}</span>
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Zap className="w-3 h-3" />
+                          Total Exercises: <span className="font-mono text-brand-400">{formatXP(totalXP)}</span>
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          Duration: <span className="font-mono text-slate-400">{checkpoint.durationDays} day</span>
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <TrendingUp className="w-3 h-3" />
+                          XP Index: <span className="font-mono text-emerald-400">{checkpoint.xpIndex}</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Progress Ring */}
+                    <div className="flex items-center gap-4 text-right">
+                      <div className="relative w-16 h-16 flex-shrink-0">
+                        <svg className="w-16 h-16 transform -rotate-90">
+                          <circle
+                            cx="32"
+                            cy="32"
+                            r="28"
+                            fill="none"
+                            stroke="rgba(148, 163, 184, 0.1)"
+                            strokeWidth="4"
+                          />
+                          <circle
+                            cx="32"
+                            cy="32"
+                            r="28"
+                            fill="none"
+                            stroke="url(#checkpoint-gradient)"
+                            strokeWidth="4"
+                            strokeLinecap="round"
+                            strokeDasharray={`${2 * Math.PI * 28}`}
+                            strokeDashoffset={`${2 * Math.PI * 28 * (1 - progress.percent / 100)}`}
+                            className="transition-all duration-500"
+                          />
+                          <defs>
+                            <linearGradient id="checkpoint-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                              <stop offset="0%" stopColor="#fbbf24" />
+                              <stop offset="100%" stopColor="#f97316" />
+                            </linearGradient>
+                          </defs>
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-xs font-bold text-white">{progress.percent}%</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[11px] text-slate-500">Exercises</div>
+                        <div className="font-mono text-sm text-slate-300">
+                          {progress.completed} / {progress.total}
+                        </div>
+                        <div className="text-[11px] text-slate-500 mt-1">XP Earned</div>
+                        <div className="font-mono text-sm text-amber-400">{formatXP(completedXP)} / {formatXP(totalXP)}</div>
+                      </div>
+                    </div>
+
+                    {/* Expand/Collapse Icon */}
+                    <div className="flex-shrink-0 ml-2">
+                      <div className={`w-8 h-8 rounded-lg bg-slate-800/50 flex items-center justify-center transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
+                        <ChevronDown className="w-4 h-4 text-slate-400" />
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* Expanded Levels */}
+                  <div
+                    className={`${isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'} overflow-hidden transition-all duration-300 ease-out`}
+                    style={{ maxHeight: isExpanded ? '2000px' : '0' }}
+                  >
+                    <div className="border-t border-slate-800 bg-slate-950/50">
+                      <div className="p-4 px-6">
+                        {checkpoint.levels.map((level, levelIndex) => (
+                          <CheckpointLevelCard
+                            key={`level-${level.level}`}
+                            level={level}
+                            levelIndex={levelIndex}
+                            challenges={challenges}
+                            navigate={navigate}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
       {/* Filters & Search Toolbar */}
       <div className="bg-dark-900 border border-slate-800/90 rounded-xl p-4 shadow-lg space-y-3">
         
@@ -303,7 +540,7 @@ export const ChallengeListPage: React.FC = () => {
         {/* Category Pills Carousel */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
           <span className="text-slate-500 shrink-0 mr-1 flex items-center gap-1">
-            <Layers className="w-3.5 h-3.5" />
+            <LayersIcon className="w-3.5 h-3.5" />
             Topics:
           </span>
           {categories.map(cat => (
@@ -422,3 +659,109 @@ export const ChallengeListPage: React.FC = () => {
     </div>
   );
 };
+
+// Checkpoint Level Card Component
+interface CheckpointLevelCardProps {
+  level: CheckpointLevel;
+  levelIndex: number;
+  challenges: ChallengeSummary[];
+  navigate: (path: string) => void;
+}
+
+const CheckpointLevelCard: React.FC<CheckpointLevelCardProps> = ({ level, levelIndex, challenges, navigate }) => {
+  const levelColors = [
+    { from: 'emerald-500', to: 'teal-400', text: 'text-emerald-400' },
+    { from: 'amber-500', to: 'orange-400', text: 'text-amber-400' },
+    { from: 'blue-500', to: 'cyan-400', text: 'text-blue-400' },
+    { from: 'purple-500', to: 'pink-400', text: 'text-purple-400' },
+    { from: 'rose-500', to: 'red-400', text: 'text-rose-400' },
+  ];
+  
+  const colors = levelColors[levelIndex % levelColors.length];
+  
+  const completedExercises = level.exercises.filter(ex => {
+    const challenge = challenges.find(c => c.id === ex.id);
+    return challenge?.status === 'VALID';
+  }).length;
+  
+  const totalExercises = level.exercises.length;
+  const percent = totalExercises > 0 ? Math.round((completedExercises / totalExercises) * 100) : 0;
+  const totalLevelXP = level.exercises.reduce((sum, ex) => sum + ex.xp, 0);
+  
+  return (
+    <div className="mb-4 last:mb-0">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <div className={`w-9 h-9 rounded-lg bg-gradient-to-br from-${colors.from} to-${colors.to} flex items-center justify-center shadow-sm`}>
+            <Shield className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <div className="font-semibold text-white">Level {level.level}</div>
+            <div className="text-[11px] text-slate-500">Difficulty {level.difficulty} • {totalExercises} exercises</div>
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="text-xs text-slate-500">XP Reward</div>
+          <div className="font-bold text-amber-400 font-mono">{formatXP(totalLevelXP)}</div>
+        </div>
+      </div>
+      
+      <div className="w-full h-1.5 bg-dark-950 rounded-full overflow-hidden mb-3">
+        <div
+          className={`h-full rounded-full transition-all duration-500 bg-gradient-to-r from-${colors.from} to-${colors.to}`}
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+        {level.exercises.map((exercise, exIndex) => {
+          const challenge = challenges.find(c => c.id === exercise.id);
+          const isCompleted = challenge?.status === 'VALID';
+          const isFailed = challenge?.status === 'FAILED';
+          
+          return (
+            <button
+              key={exercise.id}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (challenge) navigate(`/challenges/${challenge.id}`);
+              }}
+              className={`p-3 rounded-lg text-left transition-all duration-200 flex items-center gap-3 group ${
+                isCompleted
+                  ? 'bg-emerald-500/10 border border-emerald-500/30'
+                  : isFailed
+                  ? 'bg-rose-500/10 border border-rose-500/30'
+                  : 'bg-dark-950 border border-slate-700/50 hover:border-brand-500/50 hover:bg-slate-800/50'
+              }`}
+            >
+              <div className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold">
+                {isCompleted ? (
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                ) : isFailed ? (
+                  <XCircle className="w-5 h-5 text-rose-400" />
+                ) : (
+                  <span className="text-slate-500">{exIndex + 1}</span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className={`font-medium text-sm truncate ${isCompleted ? 'text-emerald-300' : isFailed ? 'text-rose-300' : 'text-slate-200'}`}>
+                  {exercise.title}
+                </div>
+                <div className="text-[11px] text-slate-500 flex items-center gap-1">
+                  <Zap className="w-3 h-3" />
+                  <span className="font-mono text-amber-400">{formatXP(exercise.xp)}</span>
+                </div>
+              </div>
+              <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-brand-400 transition-colors opacity-0 group-hover:opacity-100" />
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+function formatXP(xp: number) {
+  if (xp >= 1000) return `${(xp / 1000).toFixed(1)}k XP`;
+  return `${xp} XP`;
+}

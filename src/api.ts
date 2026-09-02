@@ -1,4 +1,4 @@
-import { ChallengeSummary, ChallengeDetail, RunResult, SubmissionRecord, PlatformStats } from './types';
+import { ChallengeSummary, ChallengeDetail, RunResult, SubmissionRecord, PlatformStats, Checkpoint } from './types';
 
 const API_BASE = '/api';
 
@@ -61,6 +61,12 @@ export const api = {
   async getStats(): Promise<PlatformStats> {
     const res = await fetch(`${API_BASE}/stats`);
     if (!res.ok) throw new Error('Failed to fetch stats');
+    return res.json();
+  },
+
+  async getCheckpoints(): Promise<{ checkpoints: Checkpoint[] }> {
+    const res = await fetch(`${API_BASE}/checkpoints`);
+    if (!res.ok) throw new Error('Failed to fetch checkpoints');
     return res.json();
   }
 };

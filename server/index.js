@@ -10,6 +10,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '..');
 const CHALLENGES_FILE = path.join(ROOT_DIR, 'data', 'challenges.json');
+const CHECKPOINTS_FILE = path.join(ROOT_DIR, 'data', 'checkpoints.json');
 
 // Load challenges dataset
 let challenges = [];
@@ -21,6 +22,15 @@ try {
 }
 
 const challengeMap = new Map(challenges.map(c => [c.id, c]));
+
+// Load checkpoints dataset
+let checkpoints = [];
+try {
+  checkpoints = JSON.parse(fs.readFileSync(CHECKPOINTS_FILE, 'utf-8'));
+  console.log(`Loaded ${checkpoints.length} checkpoints from checkpoints.json`);
+} catch (err) {
+  console.error('Failed to load checkpoints:', err);
+}
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -188,6 +198,11 @@ app.get('/api/stats', (req, res) => {
     ...stats,
     byDifficulty
   });
+});
+
+// 8. Checkpoints
+app.get('/api/checkpoints', (req, res) => {
+  res.json({ checkpoints });
 });
 
 // Serve frontend in production
