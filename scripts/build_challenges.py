@@ -1,7 +1,7 @@
 import os, re, json
 
-tests_dir = '/home/nabil/moraja3a/tests'
-readmes_dir = '/home/nabil/moraja3a/readmes'
+tests_dir = '/tests'
+readmes_dir = '/readmes'
 
 test_folders = sorted([d for d in os.listdir(tests_dir) if d.endswith('_test')])
 print(f'Total test folders: {len(test_folders)}')
@@ -126,7 +126,7 @@ for c in challenges:
     cat_counts[c['category']] = cat_counts.get(c['category'], 0) + 1
 print('Category distribution:', cat_counts)
 
-os.makedirs('/home/nabil/moraja3a/data', exist_ok=True)
-with open('/home/nabil/moraja3a/data/challenges.json', 'w', encoding='utf-8') as f:
+os.makedirs('/data', exist_ok=True)
+with open('data/challenges.json', 'w', encoding='utf-8') as f:
     json.dump(challenges, f, indent=2)
-print('Saved to /home/nabil/moraja3a/data/challenges.json')
+print('Saved to /challenges.json')

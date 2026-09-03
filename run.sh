@@ -24,7 +24,7 @@ fi
 echo "✔ Node.js: $(node -v)"
 echo "✔ Java:    $(javac -version 2>&1)"
 
-# 3. Check dependencies
+# 3. Install dependencies if needed
 if [ ! -d "node_modules" ]; then
     echo "📦 Installing project dependencies..."
     npm install
