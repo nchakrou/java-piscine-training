@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Search,
   CheckCircle2,
@@ -28,17 +28,40 @@ import {
   ChevronUp,
   ExternalLink,
   Copy,
-  AlertTriangle
-} from 'lucide-react';
-import { ChallengeSummary, Difficulty, ChallengeStatus, PlatformStats, Checkpoint, CheckpointLevel, CheckpointExercise } from '../types';
-import { api } from '../api';
-import { StatusBadge } from '../components/StatusBadge';
-import { DifficultyBadge } from '../components/DifficultyBadge';
+  AlertTriangle,
+} from "lucide-react";
+import {
+  ChallengeSummary,
+  Difficulty,
+  ChallengeStatus,
+  PlatformStats,
+  Checkpoint,
+  CheckpointLevel,
+  CheckpointExercise,
+} from "../types";
+import { api } from "../api";
+import { StatusBadge } from "../components/StatusBadge";
+import { DifficultyBadge } from "../components/DifficultyBadge";
 
 const DIFFICULTY_COLORS = {
-  Easy: { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', glow: 'shadow-emerald-500/10' },
-  Medium: { text: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', glow: 'shadow-amber-500/10' },
-  Hard: { text: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20', glow: 'shadow-rose-500/10' },
+  Easy: {
+    text: "text-emerald-400",
+    bg: "bg-emerald-500/10",
+    border: "border-emerald-500/20",
+    glow: "shadow-emerald-500/10",
+  },
+  Medium: {
+    text: "text-amber-400",
+    bg: "bg-amber-500/10",
+    border: "border-amber-500/20",
+    glow: "shadow-amber-500/10",
+  },
+  Hard: {
+    text: "text-rose-400",
+    bg: "bg-rose-500/10",
+    border: "border-rose-500/20",
+    glow: "shadow-rose-500/10",
+  },
 } as const;
 
 const DIFFICULTY_RANK = { Easy: 1, Medium: 2, Hard: 3 };
@@ -48,12 +71,20 @@ export const ChallengeListPage: React.FC = () => {
   const [stats, setStats] = useState<PlatformStats | null>(null);
   const [checkpoints, setCheckpoints] = useState<Checkpoint[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [difficultyFilter, setDifficultyFilter] = useState<Difficulty | 'ALL'>('ALL');
-  const [statusFilter, setStatusFilter] = useState<ChallengeStatus | 'ALL' | 'UNATTEMPTED'>('ALL');
-  const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
-  const [sortBy, setSortBy] = useState<'default' | 'title' | 'difficulty' | 'status'>('default');
-  const [expandedCheckpoint, setExpandedCheckpoint] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [difficultyFilter, setDifficultyFilter] = useState<Difficulty | "ALL">(
+    "ALL",
+  );
+  const [statusFilter, setStatusFilter] = useState<
+    ChallengeStatus | "ALL" | "UNATTEMPTED"
+  >("ALL");
+  const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
+  const [sortBy, setSortBy] = useState<
+    "default" | "title" | "difficulty" | "status"
+  >("default");
+  const [expandedCheckpoint, setExpandedCheckpoint] = useState<string | null>(
+    null,
+  );
 
   const navigate = useNavigate();
 
@@ -71,78 +102,95 @@ export const ChallengeListPage: React.FC = () => {
   // Extract unique categories
   const categories = useMemo(() => {
     const set = new Set<string>();
-    challenges.forEach(c => set.add(c.category));
-    return ['ALL', ...Array.from(set).sort()];
+    challenges.forEach((c) => set.add(c.category));
+    return ["ALL", ...Array.from(set).sort()];
   }, [challenges]);
 
   // Filtered & Sorted challenges
   const filteredChallenges = useMemo(() => {
     return challenges
-      .filter(c => {
+      .filter((c) => {
         const matchesSearch =
           c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
           c.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
           c.category.toLowerCase().includes(searchQuery.toLowerCase());
 
-        const matchesDiff = difficultyFilter === 'ALL' || c.difficulty === difficultyFilter;
+        const matchesDiff =
+          difficultyFilter === "ALL" || c.difficulty === difficultyFilter;
 
         const matchesStatus =
-          statusFilter === 'ALL'
+          statusFilter === "ALL"
             ? true
-            : statusFilter === 'UNATTEMPTED'
-            ? c.status === null
-            : c.status === statusFilter;
+            : statusFilter === "UNATTEMPTED"
+              ? c.status === null
+              : c.status === statusFilter;
 
-        const matchesCat = categoryFilter === 'ALL' || c.category === categoryFilter;
+        const matchesCat =
+          categoryFilter === "ALL" || c.category === categoryFilter;
 
         return matchesSearch && matchesDiff && matchesStatus && matchesCat;
       })
       .sort((a, b) => {
-        if (sortBy === 'title') return a.title.localeCompare(b.title);
-        if (sortBy === 'difficulty') {
+        if (sortBy === "title") return a.title.localeCompare(b.title);
+        if (sortBy === "difficulty") {
           return DIFFICULTY_RANK[a.difficulty] - DIFFICULTY_RANK[b.difficulty];
         }
-        if (sortBy === 'status') {
+        if (sortBy === "status") {
           const rank = { VALID: 1, FAILED: 2, [null as any]: 3 };
           return (rank[a.status as any] || 3) - (rank[b.status as any] || 3);
         }
         return 0;
       });
-  }, [challenges, searchQuery, difficultyFilter, statusFilter, categoryFilter, sortBy]);
+  }, [
+    challenges,
+    searchQuery,
+    difficultyFilter,
+    statusFilter,
+    categoryFilter,
+    sortBy,
+  ]);
 
   const solvedCount = stats ? stats.valid : 0;
   const failedCount = stats ? stats.failed : 0;
   const totalCount = challenges.length || 109;
-  const progressPercent = totalCount > 0 ? Math.round((solvedCount / totalCount) * 100) : 0;
+  const progressPercent =
+    totalCount > 0 ? Math.round((solvedCount / totalCount) * 100) : 0;
 
   // Calculate checkpoint progress
   const getCheckpointProgress = (checkpoint: Checkpoint) => {
     let totalExercises = 0;
     let completedExercises = 0;
-    checkpoint.levels.forEach(level => {
-      level.exercises.forEach(ex => {
+    checkpoint.levels.forEach((level) => {
+      level.exercises.forEach((ex) => {
         totalExercises++;
-        const challenge = challenges.find(c => c.id === ex.id);
-        if (challenge?.status === 'VALID') completedExercises++;
+        const challenge = challenges.find((c) => c.id === ex.id);
+        if (challenge?.status === "VALID") completedExercises++;
       });
     });
-    return { total: totalExercises, completed: completedExercises, percent: totalExercises > 0 ? Math.round((completedExercises / totalExercises) * 100) : 0 };
+    return {
+      total: totalExercises,
+      completed: completedExercises,
+      percent:
+        totalExercises > 0
+          ? Math.round((completedExercises / totalExercises) * 100)
+          : 0,
+    };
   };
 
   const getTotalXP = (checkpoint: Checkpoint) => {
     let total = 0;
-    checkpoint.levels.forEach(level => {
-      level.exercises.forEach(ex => total += ex.xp);
+    checkpoint.levels.forEach((level) => {
+      level.exercises.forEach((ex) => (total += ex.xp));
     });
     return total;
   };
 
   const getCompletedXP = (checkpoint: Checkpoint) => {
     let total = 0;
-    checkpoint.levels.forEach(level => {
-      level.exercises.forEach(ex => {
-        const challenge = challenges.find(c => c.id === ex.id);
-        if (challenge?.status === 'VALID') total += ex.xp;
+    checkpoint.levels.forEach((level) => {
+      level.exercises.forEach((ex) => {
+        const challenge = challenges.find((c) => c.id === ex.id);
+        if (challenge?.status === "VALID") total += ex.xp;
       });
     });
     return total;
@@ -155,15 +203,13 @@ export const ChallengeListPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      
       {/* Hero Stats Section */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        
         {/* Main Progress Card */}
         <div className="md:col-span-2 p-6 rounded-2xl bg-gradient-to-br from-dark-900 via-dark-850 to-dark-900 border border-slate-800 shadow-xl relative overflow-hidden flex flex-col justify-between">
           <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/10 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
-          
+
           <div>
             <div className="flex items-center gap-2 text-brand-400 font-semibold text-xs uppercase tracking-wider mb-1">
               <Sparkles className="w-4 h-4" />
@@ -173,16 +219,21 @@ export const ChallengeListPage: React.FC = () => {
               Java Coding Challenges
             </h1>
             <p className="text-xs text-slate-400 mt-1">
-              Master Java algorithms, data structures, and object-oriented design with automated JUnit testing.
+              Master Java algorithms, data structures, and object-oriented
+              design with automated JUnit testing.
             </p>
           </div>
 
           <div className="mt-6 space-y-2">
             <div className="flex items-center justify-between text-xs font-mono">
               <span className="text-slate-300">
-                Progress: <strong className="text-emerald-400">{solvedCount}</strong> / {totalCount} Solved
+                Progress:{" "}
+                <strong className="text-emerald-400">{solvedCount}</strong> /{" "}
+                {totalCount} Solved
               </span>
-              <span className="font-bold text-brand-400">{progressPercent}%</span>
+              <span className="font-bold text-brand-400">
+                {progressPercent}%
+              </span>
             </div>
             <div className="w-full h-2.5 bg-dark-950 rounded-full overflow-hidden p-0.5 border border-slate-800">
               <div
@@ -196,7 +247,9 @@ export const ChallengeListPage: React.FC = () => {
         {/* Difficulty Breakdown Card */}
         <div className="p-5 rounded-2xl bg-dark-900 border border-slate-800 shadow-xl flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Difficulty Solved</span>
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              Difficulty Solved
+            </span>
             <Flame className="w-4 h-4 text-amber-400" />
           </div>
 
@@ -206,7 +259,8 @@ export const ChallengeListPage: React.FC = () => {
               <div className="flex justify-between text-xs mb-1">
                 <span className="text-emerald-400 font-medium">Easy</span>
                 <span className="text-slate-400 font-mono">
-                  {stats?.byDifficulty?.Easy?.valid || 0} / {stats?.byDifficulty?.Easy?.total || 32}
+                  {stats?.byDifficulty?.Easy?.valid || 0} /{" "}
+                  {stats?.byDifficulty?.Easy?.total || 32}
                 </span>
               </div>
               <div className="w-full h-1.5 bg-dark-950 rounded-full overflow-hidden">
@@ -228,7 +282,8 @@ export const ChallengeListPage: React.FC = () => {
               <div className="flex justify-between text-xs mb-1">
                 <span className="text-amber-400 font-medium">Medium</span>
                 <span className="text-slate-400 font-mono">
-                  {stats?.byDifficulty?.Medium?.valid || 0} / {stats?.byDifficulty?.Medium?.total || 27}
+                  {stats?.byDifficulty?.Medium?.valid || 0} /{" "}
+                  {stats?.byDifficulty?.Medium?.total || 27}
                 </span>
               </div>
               <div className="w-full h-1.5 bg-dark-950 rounded-full overflow-hidden">
@@ -250,7 +305,8 @@ export const ChallengeListPage: React.FC = () => {
               <div className="flex justify-between text-xs mb-1">
                 <span className="text-rose-400 font-medium">Hard</span>
                 <span className="text-slate-400 font-mono">
-                  {stats?.byDifficulty?.Hard?.valid || 0} / {stats?.byDifficulty?.Hard?.total || 50}
+                  {stats?.byDifficulty?.Hard?.valid || 0} /{" "}
+                  {stats?.byDifficulty?.Hard?.total || 50}
                 </span>
               </div>
               <div className="w-full h-1.5 bg-dark-950 rounded-full overflow-hidden">
@@ -276,27 +332,38 @@ export const ChallengeListPage: React.FC = () => {
         {/* Quick Summary Card */}
         <div className="p-5 rounded-2xl bg-dark-900 border border-slate-800 shadow-xl flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Status Overview</span>
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              Status Overview
+            </span>
             <Trophy className="w-4 h-4 text-emerald-400" />
           </div>
 
           <div className="grid grid-cols-2 gap-2 my-2">
             <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-center">
-              <div className="text-lg font-bold text-emerald-400">{solvedCount}</div>
-              <div className="text-[11px] text-emerald-300 font-medium">Passed (VALID)</div>
+              <div className="text-lg font-bold text-emerald-400">
+                {solvedCount}
+              </div>
+              <div className="text-[11px] text-emerald-300 font-medium">
+                Passed (VALID)
+              </div>
             </div>
             <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-center">
-              <div className="text-lg font-bold text-rose-400">{failedCount}</div>
-              <div className="text-[11px] text-rose-300 font-medium">Failed</div>
+              <div className="text-lg font-bold text-rose-400">
+                {failedCount}
+              </div>
+              <div className="text-[11px] text-rose-300 font-medium">
+                Failed
+              </div>
             </div>
           </div>
 
           <div className="text-[11px] text-slate-400 flex items-center justify-between">
             <span>Unattempted:</span>
-            <span className="font-mono text-slate-300 font-semibold">{totalCount - solvedCount - failedCount}</span>
+            <span className="font-mono text-slate-300 font-semibold">
+              {totalCount - solvedCount - failedCount}
+            </span>
           </div>
         </div>
-
       </div>
 
       {/* Checkpoints Section */}
@@ -308,11 +375,14 @@ export const ChallengeListPage: React.FC = () => {
               Checkpoints & Exam Milestones
             </h2>
             <p className="text-xs text-slate-400 mt-1">
-              Timed exams that validate your mastery. Each checkpoint unlocks after completing the corresponding week's challenges.
+              Timed exams that validate your mastery. Each checkpoint unlocks
+              after completing the corresponding week's challenges.
             </p>
           </div>
           <div className="flex items-center gap-2 text-xs text-slate-500">
-            <span className="font-mono text-brand-400">{checkpoints.length}</span>
+            <span className="font-mono text-brand-400">
+              {checkpoints.length}
+            </span>
             <span>Checkpoints</span>
           </div>
         </div>
@@ -325,7 +395,9 @@ export const ChallengeListPage: React.FC = () => {
         ) : checkpoints.length === 0 ? (
           <div className="py-12 text-center text-slate-500">
             <Award className="w-10 h-10 mx-auto mb-2 opacity-40" />
-            <p className="text-base text-slate-300 font-medium">No checkpoints available</p>
+            <p className="text-base text-slate-300 font-medium">
+              No checkpoints available
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -335,7 +407,7 @@ export const ChallengeListPage: React.FC = () => {
               const completedXP = getCompletedXP(checkpoint);
               const isExpanded = expandedCheckpoint === checkpoint.id;
               const weekLabel = `Week ${checkpoint.week}`;
-              
+
               return (
                 <div
                   key={checkpoint.id}
@@ -343,7 +415,9 @@ export const ChallengeListPage: React.FC = () => {
                 >
                   {/* Checkpoint Header */}
                   <button
-                    onClick={() => setExpandedCheckpoint(isExpanded ? null : checkpoint.id)}
+                    onClick={() =>
+                      setExpandedCheckpoint(isExpanded ? null : checkpoint.id)
+                    }
                     className="w-full p-5 flex items-center gap-4 cursor-pointer hover:bg-slate-800/50 transition-colors"
                   >
                     {/* Checkpoint Icon & Number */}
@@ -359,7 +433,9 @@ export const ChallengeListPage: React.FC = () => {
                     {/* Checkpoint Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 flex-wrap">
-                        <h3 className="font-bold text-lg text-white truncate">{checkpoint.title}</h3>
+                        <h3 className="font-bold text-lg text-white truncate">
+                          {checkpoint.title}
+                        </h3>
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase tracking-wider">
                           {weekLabel}
                         </span>
@@ -370,25 +446,39 @@ export const ChallengeListPage: React.FC = () => {
                           Difficulty {checkpoint.difficulty}
                         </span>
                       </div>
-                      
-                      <p className="text-xs text-slate-400 mt-1 line-clamp-2">{checkpoint.description}</p>
-                      
+
+                      <p className="text-xs text-slate-400 mt-1 line-clamp-2">
+                        {checkpoint.description}
+                      </p>
+
                       <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-slate-500">
                         <span className="flex items-center gap-1">
                           <Target className="w-3 h-3" />
-                          Expected: <span className="font-mono text-amber-400">{formatXP(checkpoint.expectedXP)}</span>
+                          Expected:{" "}
+                          <span className="font-mono text-amber-400">
+                            {formatXP(checkpoint.expectedXP)}
+                          </span>
                         </span>
                         <span className="flex items-center gap-1">
                           <Zap className="w-3 h-3" />
-                          Total Exercises: <span className="font-mono text-brand-400">{formatXP(totalXP)}</span>
+                          Total Exercises:{" "}
+                          <span className="font-mono text-brand-400">
+                            {formatXP(totalXP)}
+                          </span>
                         </span>
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
-                          Duration: <span className="font-mono text-slate-400">{checkpoint.durationDays} day</span>
+                          Duration:{" "}
+                          <span className="font-mono text-slate-400">
+                            {checkpoint.durationDays} day
+                          </span>
                         </span>
                         <span className="flex items-center gap-1">
                           <TrendingUp className="w-3 h-3" />
-                          XP Index: <span className="font-mono text-emerald-400">{checkpoint.xpIndex}</span>
+                          XP Index:{" "}
+                          <span className="font-mono text-emerald-400">
+                            {checkpoint.xpIndex}
+                          </span>
                         </span>
                       </div>
                     </div>
@@ -418,29 +508,45 @@ export const ChallengeListPage: React.FC = () => {
                             className="transition-all duration-500"
                           />
                           <defs>
-                            <linearGradient id="checkpoint-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <linearGradient
+                              id="checkpoint-gradient"
+                              x1="0%"
+                              y1="0%"
+                              x2="100%"
+                              y2="100%"
+                            >
                               <stop offset="0%" stopColor="#fbbf24" />
                               <stop offset="100%" stopColor="#f97316" />
                             </linearGradient>
                           </defs>
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-xs font-bold text-white">{progress.percent}%</span>
+                          <span className="text-xs font-bold text-white">
+                            {progress.percent}%
+                          </span>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-[11px] text-slate-500">Exercises</div>
+                        <div className="text-[11px] text-slate-500">
+                          Exercises
+                        </div>
                         <div className="font-mono text-sm text-slate-300">
                           {progress.completed} / {progress.total}
                         </div>
-                        <div className="text-[11px] text-slate-500 mt-1">XP Earned</div>
-                        <div className="font-mono text-sm text-amber-400">{formatXP(completedXP)} / {formatXP(totalXP)}</div>
+                        <div className="text-[11px] text-slate-500 mt-1">
+                          XP Earned
+                        </div>
+                        <div className="font-mono text-sm text-amber-400">
+                          {formatXP(completedXP)} / {formatXP(totalXP)}
+                        </div>
                       </div>
                     </div>
 
                     {/* Expand/Collapse Icon */}
                     <div className="flex-shrink-0 ml-2">
-                      <div className={`w-8 h-8 rounded-lg bg-slate-800/50 flex items-center justify-center transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
+                      <div
+                        className={`w-8 h-8 rounded-lg bg-slate-800/50 flex items-center justify-center transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`}
+                      >
                         <ChevronDown className="w-4 h-4 text-slate-400" />
                       </div>
                     </div>
@@ -448,8 +554,8 @@ export const ChallengeListPage: React.FC = () => {
 
                   {/* Expanded Levels */}
                   <div
-                    className={`${isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'} overflow-hidden transition-all duration-300 ease-out`}
-                    style={{ maxHeight: isExpanded ? '2000px' : '0' }}
+                    className={`${isExpanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"} overflow-hidden transition-all duration-300 ease-out`}
+                    style={{ maxHeight: isExpanded ? "2000px" : "0" }}
                   >
                     <div className="border-t border-slate-800 bg-slate-950/50">
                       <div className="p-4 px-6">
@@ -474,16 +580,14 @@ export const ChallengeListPage: React.FC = () => {
 
       {/* Filters & Search Toolbar */}
       <div className="bg-dark-900 border border-slate-800/90 rounded-xl p-4 shadow-lg space-y-3">
-        
         <div className="flex flex-col md:flex-row items-center gap-3 justify-between">
-          
           {/* Search Input */}
           <div className="relative w-full md:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by name, topic or keyword..."
               className="w-full pl-9 pr-4 py-2 bg-dark-950 border border-slate-700/80 rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-brand-500"
             />
@@ -491,17 +595,16 @@ export const ChallengeListPage: React.FC = () => {
 
           {/* Filter Pills */}
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-            
             {/* Difficulty Filter */}
             <div className="flex items-center bg-dark-950 border border-slate-700/80 rounded-lg p-0.5 text-xs">
-              {(['ALL', 'Easy', 'Medium', 'Hard'] as const).map(diff => (
+              {(["ALL", "Easy", "Medium", "Hard"] as const).map((diff) => (
                 <button
                   key={diff}
                   onClick={() => setDifficultyFilter(diff)}
                   className={`px-3 py-1.5 rounded-md font-medium transition-colors ${
                     difficultyFilter === diff
-                      ? 'bg-slate-800 text-white shadow-sm font-semibold'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? "bg-slate-800 text-white shadow-sm font-semibold"
+                      : "text-slate-400 hover:text-slate-200"
                   }`}
                 >
                   {diff}
@@ -512,7 +615,7 @@ export const ChallengeListPage: React.FC = () => {
             {/* Status Filter */}
             <select
               value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value as any)}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
               className="bg-dark-950 border border-slate-700/80 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500"
             >
               <option value="ALL">Status: All</option>
@@ -524,7 +627,7 @@ export const ChallengeListPage: React.FC = () => {
             {/* Sort Filter */}
             <select
               value={sortBy}
-              onChange={e => setSortBy(e.target.value as any)}
+              onChange={(e) => setSortBy(e.target.value as any)}
               className="bg-dark-950 border border-slate-700/80 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500"
             >
               <option value="default">Sort: Default</option>
@@ -532,9 +635,7 @@ export const ChallengeListPage: React.FC = () => {
               <option value="difficulty">Sort: Difficulty</option>
               <option value="status">Sort: Status</option>
             </select>
-
           </div>
-
         </div>
 
         {/* Category Pills Carousel */}
@@ -543,26 +644,24 @@ export const ChallengeListPage: React.FC = () => {
             <LayersIcon className="w-3.5 h-3.5" />
             Topics:
           </span>
-          {categories.map(cat => (
+          {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setCategoryFilter(cat)}
               className={`px-2.5 py-1 rounded-full whitespace-nowrap transition-colors ${
                 categoryFilter === cat
-                  ? 'bg-brand-500/20 text-brand-400 border border-brand-500/40 font-medium'
-                  : 'bg-dark-950 text-slate-400 border border-slate-800 hover:text-slate-200 hover:border-slate-700'
+                  ? "bg-brand-500/20 text-brand-400 border border-brand-500/40 font-medium"
+                  : "bg-dark-950 text-slate-400 border border-slate-800 hover:text-slate-200 hover:border-slate-700"
               }`}
             >
-              {cat === 'ALL' ? 'All Topics' : cat}
+              {cat === "ALL" ? "All Topics" : cat}
             </button>
           ))}
         </div>
-
       </div>
 
       {/* Challenges List Table */}
       <div className="bg-dark-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
-        
         {/* Table Header */}
         <div className="grid grid-cols-12 gap-4 px-6 py-3.5 bg-dark-950 border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-wider">
           <div className="col-span-1 text-center">Status</div>
@@ -581,8 +680,12 @@ export const ChallengeListPage: React.FC = () => {
         ) : filteredChallenges.length === 0 ? (
           <div className="py-20 text-center text-slate-500">
             <Filter className="w-10 h-10 mx-auto mb-2 opacity-40" />
-            <p className="text-base text-slate-300 font-medium">No challenges found</p>
-            <p className="text-xs text-slate-500 mt-1">Try resetting your filters or search query.</p>
+            <p className="text-base text-slate-300 font-medium">
+              No challenges found
+            </p>
+            <p className="text-xs text-slate-500 mt-1">
+              Try resetting your filters or search query.
+            </p>
           </div>
         ) : (
           <div className="divide-y divide-slate-800/60">
@@ -592,19 +695,27 @@ export const ChallengeListPage: React.FC = () => {
                 onClick={() => navigate(`/challenges/${challenge.id}`)}
                 className="grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-slate-800/40 cursor-pointer transition-colors group"
               >
-                
                 {/* 1. Status Icon */}
                 <div className="col-span-1 flex items-center justify-center">
-                  {challenge.status === 'VALID' ? (
-                    <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center" title="Passed All Tests">
+                  {challenge.status === "VALID" ? (
+                    <div
+                      className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center"
+                      title="Passed All Tests"
+                    >
                       <CheckCircle2 className="w-4 h-4" />
                     </div>
-                  ) : challenge.status === 'FAILED' ? (
-                    <div className="w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center" title="Failed Tests">
+                  ) : challenge.status === "FAILED" ? (
+                    <div
+                      className="w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center"
+                      title="Failed Tests"
+                    >
                       <XCircle className="w-4 h-4" />
                     </div>
                   ) : (
-                    <div className="w-6 h-6 rounded-full text-slate-600 flex items-center justify-center" title="Not submitted yet">
+                    <div
+                      className="w-6 h-6 rounded-full text-slate-600 flex items-center justify-center"
+                      title="Not submitted yet"
+                    >
                       <CircleDashed className="w-4 h-4" />
                     </div>
                   )}
@@ -616,7 +727,9 @@ export const ChallengeListPage: React.FC = () => {
                     <span className="font-bold text-sm text-slate-100 group-hover:text-brand-400 transition-colors truncate">
                       {idx + 1}. {challenge.title}
                     </span>
-                    {challenge.status && <StatusBadge status={challenge.status} size="sm" />}
+                    {challenge.status && (
+                      <StatusBadge status={challenge.status} size="sm" />
+                    )}
                   </div>
                   <p className="text-xs text-slate-400 truncate mt-0.5">
                     {challenge.description}
@@ -632,7 +745,10 @@ export const ChallengeListPage: React.FC = () => {
 
                 {/* 4. Difficulty */}
                 <div className="col-span-3 md:col-span-2 text-center">
-                  <DifficultyBadge difficulty={challenge.difficulty} size="sm" />
+                  <DifficultyBadge
+                    difficulty={challenge.difficulty}
+                    size="sm"
+                  />
                 </div>
 
                 {/* 5. Action */}
@@ -644,18 +760,17 @@ export const ChallengeListPage: React.FC = () => {
                     }}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-brand-500 hover:text-dark-950 text-slate-200 transition-all border border-slate-700/60 group-hover:border-brand-500/50"
                   >
-                    <span>{challenge.status === 'VALID' ? 'Review' : 'Solve'}</span>
+                    <span>
+                      {challenge.status === "VALID" ? "Review" : "Solve"}
+                    </span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
-
               </div>
             ))}
           </div>
         )}
-
       </div>
-
     </div>
   );
 };
@@ -668,94 +783,114 @@ interface CheckpointLevelCardProps {
   navigate: (path: string) => void;
 }
 
-const CheckpointLevelCard: React.FC<CheckpointLevelCardProps> = ({ level, levelIndex, challenges, navigate }) => {
+const CheckpointLevelCard: React.FC<CheckpointLevelCardProps> = ({
+  level,
+  levelIndex,
+  challenges,
+  navigate,
+}) => {
   const levelColors = [
-    { from: 'emerald-500', to: 'teal-400', text: 'text-emerald-400' },
-    { from: 'amber-500', to: 'orange-400', text: 'text-amber-400' },
-    { from: 'blue-500', to: 'cyan-400', text: 'text-blue-400' },
-    { from: 'purple-500', to: 'pink-400', text: 'text-purple-400' },
-    { from: 'rose-500', to: 'red-400', text: 'text-rose-400' },
+    { from: "emerald-500", to: "teal-400", text: "text-emerald-400" },
+    { from: "amber-500", to: "orange-400", text: "text-amber-400" },
+    { from: "blue-500", to: "cyan-400", text: "text-blue-400" },
+    { from: "purple-500", to: "pink-400", text: "text-purple-400" },
+    { from: "rose-500", to: "red-400", text: "text-rose-400" },
   ];
-  
+
   const colors = levelColors[levelIndex % levelColors.length];
-  
-  const completedExercises = level.exercises.filter(ex => {
-    const challenge = challenges.find(c => c.id === ex.id);
-    return challenge?.status === 'VALID';
+
+  const completedExercises = level.exercises.filter((ex) => {
+    const challenge = challenges.find((c) => c.id === ex.id);
+    return challenge?.status === "VALID";
   }).length;
-  
+
   const totalExercises = level.exercises.length;
-  const percent = totalExercises > 0 ? Math.round((completedExercises / totalExercises) * 100) : 0;
+  const percent =
+    totalExercises > 0
+      ? Math.round((completedExercises / totalExercises) * 100)
+      : 0;
   const totalLevelXP = level.exercises.reduce((sum, ex) => sum + ex.xp, 0);
-  
+
   return (
     <div className="mb-4 last:mb-0">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div className={`w-9 h-9 rounded-lg bg-gradient-to-br from-${colors.from} to-${colors.to} flex items-center justify-center shadow-sm`}>
+          <div
+            className={`w-9 h-9 rounded-lg bg-gradient-to-br from-${colors.from} to-${colors.to} flex items-center justify-center shadow-sm`}
+          >
             <Shield className="w-5 h-5 text-white" />
           </div>
           <div>
             <div className="font-semibold text-white">Level {level.level}</div>
-            <div className="text-[11px] text-slate-500">Difficulty {level.difficulty} • {totalExercises} exercises</div>
+            <div className="text-[11px] text-slate-500">
+              Difficulty {level.difficulty} • {totalExercises} exercises
+            </div>
           </div>
         </div>
         <div className="text-right">
           <div className="text-xs text-slate-500">XP Reward</div>
-          <div className="font-bold text-amber-400 font-mono">{formatXP(totalLevelXP)}</div>
+          <div className="font-bold text-amber-400 font-mono">
+            {formatXP(totalLevelXP)}
+          </div>
         </div>
       </div>
-      
+
       <div className="w-full h-1.5 bg-dark-950 rounded-full overflow-hidden mb-3">
         <div
           className={`h-full rounded-full transition-all duration-500 bg-gradient-to-r from-${colors.from} to-${colors.to}`}
           style={{ width: `${percent}%` }}
         />
       </div>
-      
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-        {level.exercises.map((exercise, exIndex) => {
-          const challenge = challenges.find(c => c.id === exercise.id);
-          const isCompleted = challenge?.status === 'VALID';
-          const isFailed = challenge?.status === 'FAILED';
-          
-          return (
-            <button
-              key={exercise.id}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (challenge) navigate(`/challenges/${challenge.id}`);
-              }}
-              className={`p-3 rounded-lg text-left transition-all duration-200 flex items-center gap-3 group ${
-                isCompleted
-                  ? 'bg-emerald-500/10 border border-emerald-500/30'
-                  : isFailed
-                  ? 'bg-rose-500/10 border border-rose-500/30'
-                  : 'bg-dark-950 border border-slate-700/50 hover:border-brand-500/50 hover:bg-slate-800/50'
-              }`}
-            >
-              <div className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold">
-                {isCompleted ? (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                ) : isFailed ? (
-                  <XCircle className="w-5 h-5 text-rose-400" />
-                ) : (
-                  <span className="text-slate-500">{exIndex + 1}</span>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className={`font-medium text-sm truncate ${isCompleted ? 'text-emerald-300' : isFailed ? 'text-rose-300' : 'text-slate-200'}`}>
-                  {exercise.title}
+        {[...level.exercises]
+          .sort((a, b) => a.title.localeCompare(b.title))
+          .map((exercise, exIndex) => {
+            const challenge = challenges.find((c) => c.id === exercise.id);
+            const isCompleted = challenge?.status === "VALID";
+            const isFailed = challenge?.status === "FAILED";
+
+            return (
+              <button
+                key={exercise.id}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (challenge) navigate(`/challenges/${challenge.id}`);
+                }}
+                className={`p-3 rounded-lg text-left transition-all duration-200 flex items-center gap-3 group ${
+                  isCompleted
+                    ? "bg-emerald-500/10 border border-emerald-500/30"
+                    : isFailed
+                      ? "bg-rose-500/10 border border-rose-500/30"
+                      : "bg-dark-950 border border-slate-700/50 hover:border-brand-500/50 hover:bg-slate-800/50"
+                }`}
+              >
+                <div className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold">
+                  {isCompleted ? (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                  ) : isFailed ? (
+                    <XCircle className="w-5 h-5 text-rose-400" />
+                  ) : (
+                    <span className="text-slate-500">{exIndex + 1}</span>
+                  )}
                 </div>
-                <div className="text-[11px] text-slate-500 flex items-center gap-1">
-                  <Zap className="w-3 h-3" />
-                  <span className="font-mono text-amber-400">{formatXP(exercise.xp)}</span>
+                <div className="flex-1 min-w-0">
+                  <div
+                    className={`font-medium text-sm truncate ${isCompleted ? "text-emerald-300" : isFailed ? "text-rose-300" : "text-slate-200"}`}
+                  >
+                    {exercise.title}
+                  </div>
+                  <div className="text-[11px] text-slate-500 flex items-center gap-1">
+                    <Zap className="w-3 h-3" />
+                    <span className="font-mono text-amber-400">
+                      {formatXP(exercise.xp)}
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-brand-400 transition-colors opacity-0 group-hover:opacity-100" />
-            </button>
-          );
-        })}
+                <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-brand-400 transition-colors opacity-0 group-hover:opacity-100" />
+              </button>
+            );
+          })}
       </div>
     </div>
   );
